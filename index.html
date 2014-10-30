@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<title>Steepest Streets of SF</title>
+		<link href='http://fonts.googleapis.com/css?family=Lobster+Two:400,700italic,400italic,700' rel='stylesheet' type='text/css'>
+		<style>
+		
+			html {
+				background-color: #CCCCCC;
+				background: url(images/filbert.jpg) no-repeat top left fixed; 
+				-webkit-background-size: cover;
+				-moz-background-size: cover;
+				-o-background-size: cover;
+				background-size: cover;
+			}
+			
+			body {
+				font-family: 'Lobster Two', cursive; 
+				color: #850606;
+				margin: 0%;
+				padding: 0%;
+				border: 0%;
+				width: 100%;
+				height: 100%;
+				font-size: 1.1em;
+			}
+			
+			a:link {
+				color: #850606;
+			}
+
+			#background-img {
+				width: 100%;
+				position: absolute;
+				top: 0;
+				left: 0;
+				z-index:-1;
+				overflow-x: hidden;
+			}
+			
+			h1 { 
+				font-weight: bold;
+				font-size: 3em;
+				padding: 0em;
+				margin: 0em;
+			}
+			
+			.block {
+				background-color: rgba(255,255,255,0.85);
+				border: .10em solid;
+				border-radius: 1em;
+				border-color: #222222;
+				padding: 1%;
+				margin-top: 1%;
+				margin-left: 1%;
+				margin-right: 1%;
+				margin-bottom: 1%;
+			}
+			
+			.halfCol { 
+				width: 45.5%; 
+			}
+			
+			.left {
+				float: left;
+			}
+			
+			.right {
+				float: right;
+			}
+			
+			#list { 
+				width: 100%
+			}
+			
+			#map_canvas {
+				width: 100%;
+				height: 100%;
+				font-family: Arial, Helvetica,sans-serif;
+				font-size: .75em;
+			}
+			
+			.clear {
+				clear:both;
+			}
+			
+			.share_this_text {
+				float: left;
+				padding-top: 10px;
+				padding-right: 10px;
+				font-size: 15px;
+			}
+			.share_this_box {
+				padding-top: 2px;
+				padding-left: 15px;
+				margin: 0px;
+				line-height: .5em;
+				background-color: rgba(255,255,255,1	);
+				border: .10em solid #850606;
+				border-top: 0px;
+				border-top-left-radius: 0px;
+				border-top-right-radius: 0px;
+				border-bottom-left-radius: 8px;
+				border-bottom-right-radius: 8px;
+				width: 210px;
+				height: 34px;
+				position: fixed;
+				top: 0em;
+				right: 2em;
+			}
+		</style>
+		
+		<script type="text/javascript">var switchTo5x=false;</script>
+		<script type="text/javascript" src="http://w.sharethis.com/button/buttons.js"></script>
+		<script type="text/javascript">stLight.options({publisher: "d60c4e31-b157-4e05-8500-96c3f2522d40"}); </script>		
+		
+		<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+		
+		<script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?sensor=false"></script>
+		
+		<script type="text/javascript">
+		    
+			SD_RANK = 0;
+			SD_DESCRIPTION = 1;
+			SD_MAX_GRADE = 2;
+			SD_CROSS_STREET = 3;
+			SD_TRAFFIC_DIRECTION = 4;
+ 			SD_LOCATION = 5;
+			SD_HEADING = 6;
+		
+			var map;
+			var steepData;
+			var infoWindows = {};
+			var markers = {};
+			var emHeight = 25;
+			
+			//var mapSize = ;
+			  function initializeMap() {
+			  
+				// hack to deal with google maps
+				$('#map_canvas').height( $('#list-container').width());
+				$('#map_canvas').width( $('#list-container').width());
+	
+				// start setting map options
+				var myOptions = {
+				  zoom: 13,
+				  center: new google.maps.LatLng(37.7700, -122.42),
+				  mapTypeId: google.maps.MapTypeId.ROADMAP
+				};
+				map = new google.maps.Map(document.getElementById('map_canvas'),
+					myOptions);
+					
+				var bounds = new google.maps.LatLngBounds ();
+					
+				for (var i = 0; i < steepData.rows.length; i++) {
+					latLangSplit = steepData.rows[i][SD_LOCATION].split(',');
+					var latLang = new google.maps.LatLng(latLangSplit[0],latLangSplit[1]);
+					
+					(function (rowPos) {
+					
+						markers[i] = new google.maps.Marker({
+							position: latLang,
+							map: map,
+							zIndex: (100 - i),
+							icon: 'http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=' + (i + 1) +'|FF0000|000000',
+							title: steepData.rows[rowPos][SD_DESCRIPTION]
+						});
+					
+					
+						infoWindows[rowPos] = new google.maps.InfoWindow();
+						content = '<strong>DESCRIPTION:</strong> '+ steepData.rows[rowPos][SD_DESCRIPTION] + '<BR />'
+								+ '<strong>MAX GRADE:</strong> '+ (Number(steepData.rows[rowPos][SD_MAX_GRADE]) * 100 ).toFixed(1)+'%' + '<BR />'
+								+ '<strong>TRAFFIC DIRECTION:</strong> '+ steepData.rows[rowPos][SD_TRAFFIC_DIRECTION] + '<BR />'
+								+ '<strong>LAT/LONG:</strong> '+ steepData.rows[rowPos][SD_LOCATION] + '<BR />'
+								+ '<strong>START INTERSECTION:</strong><br /><a href="https://maps.google.com/maps?q=24th+and+Valencia&daddr='+ steepData.rows[rowPos][SD_CROSS_STREET] + '&hl=en-US&view=map&z=16" target="_blank">'+ steepData.rows[rowPos][SD_CROSS_STREET] + '</a><BR />';
+						
+						infoWindows[rowPos].setContent(content);
+						google.maps.event.addListener(markers[rowPos], "click", function(rowData) {
+								openInfoWindow(rowPos);
+						});
+					})(i);
+					bounds.extend(latLang)
+				}
+				map.fitBounds(bounds);
+			}
+			  
+			function openInfoWindow(rowPos) {
+				for (i in infoWindows) {
+					infoWindows[i].close();
+				}
+				if (map.getZoom()	 > 10) map.setZoom(16);
+				infoWindows[rowPos].open(map, markers[rowPos]);
+				map.panTo(markers[rowPos].getPosition());
+				$(window).scrollTop($('#map-container').offset().top - emHeight)
+				//$('html, body').animate({scrollTop: emHeight * 5}, 'fast');
+				
+			}	
+			
+			function configureWindow() {
+				if ($(window).height() > $(window).width() ) {
+					$('#map-container').removeClass('halfCol left');
+					$('#list-container').removeClass('halfCol right');
+					$('html body').css("font-size", "2em");
+					$('h1').css("font-size", "2.5em");
+				} else {
+					$('#map-container').addClass('halfCol left');
+					$('#list-container').addClass('halfCol right');
+					$('html body').css("font-size", "1.1em");
+					$('h1').css("font-size", "3em");
+				}
+			}
+			
+			//onReady!
+			$(
+				function() {
+					emHeight = $("#blank-text").height();
+		 
+					$.getJSON("https://www.googleapis.com/fusiontables/v1/query?sql=SELECT * FROM 1Kj0CwrZ7Vzd9gOX11CEMaGlO-usCvwyq8FBiBmo ORDER BY 'Max Grade' DESC &key=AIzaSyBbl8mUQzzgtm3m_4se8ZWvomRpxmqLtno&callback=?", 
+						function(data) {
+							steepData = data;
+							var content = "";
+							var maxRise = emHeight;
+							var maxGrade = steepData.rows[0][SD_MAX_GRADE];
+							var run = Math.round(maxRise / maxGrade);
+							
+							$.each(data.rows, 
+								function(i,row){
+								    content = content +  "<tr id='list_pos_"+i+ "'>"; 
+									content = content + '<td>' + (i+1) + ') </td>' ;
+									content = content + '<td> ' + row[SD_DESCRIPTION] + ' </td>' ;
+									content = content + '<td> ' + (Number(row[SD_MAX_GRADE]) * 100 ).toFixed(1) + '% ' + ' </td>' ;
+									content = content + '<td> ' + "<canvas id='canvas_pos_"+i+"' width='"+ run +"' height='"+ maxRise +"'></canvas>"
+										+ ' </td>' ;
+									if (row[SD_TRAFFIC_DIRECTION] == 'Both') {
+										content = content + '<td style="text-align: center;"> ' +'&uarr;&darr;'  + ' </td>';
+									} else {
+										content = content +  '<td style="text-align: center;"> ' +'&darr;'  + ' </td>';
+									}
+									// street view doesn't seem that cool
+									//content = content + "<a href='http://maps.googleapis.com/maps/api/streetview?size=600x300&location=" + row[SD_LOCATION] + "&heading=" + row[SD_HEADING] + "&fov=90&pitch=-10&sensor=false'>pic</a>";
+									content = content + "</tr>";
+								}
+							);	
+							$(content).appendTo($("#list"));
+							for (var i = 0; i < data.rows.length; i++) {
+								// set info window popup
+							    (function (i) {
+									$("#list_pos_"+i).click( 
+										function() {  openInfoWindow(i);}
+									);
+								} )(i);
+								
+								// draw a line
+								var ctx=document.getElementById("canvas_pos_"+i).getContext("2d");
+								ctx.beginPath();
+								ctx.moveTo(0,maxRise);
+								//ctx.lineTo(emHeight,0);
+								ctx.lineTo(run,Math.round(maxRise - (run * Number(steepData.rows[i][SD_MAX_GRADE]) )  ));
+								ctx.lineTo(run,maxRise);
+								ctx.lineTo(0,maxRise);
+								ctx.closePath();
+								ctx.fill();
+							}
+							configureWindow();
+							initializeMap();
+						}
+					);
+				
+					
+					$(window).resize(function() {
+						configureWindow();
+						initializeMap();
+					});
+				}
+			);
+			 
+		</script>
+		
+		<script type="text/javascript">
+			var _gaq = _gaq || [];
+			_gaq.push(['_setAccount', 'UA-17436778-1']);
+			_gaq.push(['_trackPageview']);
+
+			(function() {
+				var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+				ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+				var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+			})();
+		</script>
+	</head>
+	<body>
+	    <!-- img src="images/filbert.jpg" id="background-img"/ -->
+		<div class="block">
+			<h1>Steepest Streets of SF</h1>
+				
+		</div>
+	
+		<div class="share_this_box">
+		    <div class="share_this_text">share this!</div>
+			<span class='st_facebook_large' displayText='Facebook'></span>
+			<span class='st_twitter_large' displayText='Tweet'></span>
+			<span class='st_sharethis_large' displayText='ShareThis'></span>
+			
+		</div>	
+		
+		<div id="map-container"  class="block halfCol left">
+			<div id="map_canvas"></div>
+		</div>
+		
+		<div id="list-container" class="block halfCol right">
+			<table id="list">
+				<tr style="font-weight: bold;">
+					<td>Pos.</td>
+					<td>Description</td>
+					<td colspan='2'>Max Grade</td>
+					<td>Traffic Direction</td>
+				</tr>
+			</table>
+		</div>
+		
+		<div class="block clear">
+			Brought to you by RCPETERS and <a href='http://wrongbike.com/' target='_blank'>WRONGBIKE.COM</a><br />
+			Report any issues to wrongbike@wrongbike.com<br />
+			<br />
+			Special Thanks to <a href='http://www.datapointed.net' target='_blank'>Data Pointed</a> and your <a href="http://www.datapointed.net/2009/11/the-steeps-of-san-francisco/" target="_blank">The Steeps Of San Francisco</a> and <a href="http://www.datapointed.net/2010/02/more-steeps-of-san-francisco/" target="_blank">More Steeps Of San Francisco</a> articles.
+			<br />
+			Data Backed by <a href="https://www.google.com/fusiontables/DataSource?docid=1Kj0CwrZ7Vzd9gOX11CEMaGlO-usCvwyq8FBiBmo" target="_blank">Steepest Streets of SF</a> Google Fusion Table. Please contact with any suggestions.
+			<span id="blank-text">&nbsp;</span>
+		</div>
+		
+	</body>
+</html>
+
+
